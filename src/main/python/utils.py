@@ -75,14 +75,14 @@ def add_all_children_to_parents(workspace):
 			idx = find_node(nodes['children'], i['dialog_node'])
 			if idx == -1:
 				if 'previous_sibling' in j:
-					nodes['children'].append({'dialog_node': i['dialog_node'], 'n._of_conversations': 0, 'children': [{'dialog_node': j['dialog_node'],'output': j['output'], 'previous_sibling': j['previous_sibling']}]})
+					nodes['children'].append({'dialog_node': i['dialog_node'], 'n._of_conversations': 0, 'children': [{'dialog_node': j['dialog_node'],'n._of_conversations':0,'output': j['output'], 'previous_sibling': j['previous_sibling']}]})
 				else:
-					nodes['children'].append({'dialog_node': i['dialog_node'], 'n._of_conversations': 0, 'children': [{'dialog_node': j['dialog_node'], 'output': j['output']}]})
+					nodes['children'].append({'dialog_node': i['dialog_node'], 'n._of_conversations': 0, 'children': [{'dialog_node': j['dialog_node'], 'n._of_conversations':0,'output': j['output']}]})
 			else:
 				if 'previous_sibling' in j:
-					nodes['children'][idx]['children'].append({'dialog_node': j['dialog_node'], 'output': j['output'], 'previous_sibling': j['previous_sibling']})
+					nodes['children'][idx]['children'].append({'dialog_node': j['dialog_node'], 'n._of_conversations': 0,'output': j['output'], 'previous_sibling': j['previous_sibling']})
 				else:
-					nodes['children'][idx]['children'].append({'dialog_node': j['dialog_node'], 'output': j['output']})
+					nodes['children'][idx]['children'].append({'dialog_node': j['dialog_node'], 'n._of_conversations': 0,'output': j['output']})
 			
 #	for node in nodes['children']:
 #		if len(node['children']) > 1:
@@ -108,21 +108,20 @@ def compute_number_of_conversations(tree, logs):
 	for i in logs:
 		nodes.append(i['response']['output']['nodes_visited'])
 	nodes.sort(key=len)
-	# TODO: 
-#	for node in nodes:
-#		idx = find_node(tree['children'], node[0])
-#		print(node[0]) 				
-#		tree['children'][idx]['n._of_conversations'] += 1
-		#if len(node) > 1:
-		#	for i in range(1, len(node)):
-		#			idx2 = find_node(tree['children'][idx]['children'], node[i])
-		#		if idx2 == -1: 
-	#				print(node[i]) 
-				#	continue
-	#			if 'n._of_conversations' in tree['children'][idx]['children'][idx2]:
-	#				tree['children'][idx]['children'][idx2]['n._of_conversations'] += 1
-#				else: tree['children'][idx]['children'][idx2]['n._of_conversations'] = 1
-
+	for node in nodes:
+		if len(node) > 1:
+			for j in range(1, len(node)):
+				idx3 = find_node(tree['children'], node[j-1])
+				idx2 = find_node(tree['children'][idx3]['children'], node[j])
+				if idx2 > -1:
+					tree['children'][idx3]['n._of_conversations'] += 1
+					tree['children'][idx3]['children'][idx2]['n._of_conversations'] += 1
+				else:
+					idx3 = find_node(tree['children'], node[j])
+					tree['children'][idx3]['n._of_conversations'] += 1	
+		else:
+			idx = find_node(tree['children'], node[0])
+			tree['children'][idx]['n._of_conversations'] += 1
 	return tree
 
 
