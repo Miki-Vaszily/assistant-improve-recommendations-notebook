@@ -2,77 +2,70 @@
 <!DOCTYPE html>
 <meta charset="UTF-8">
 <style>
-
 .node circle {
   fill: #fff;
-  stroke: steelblue;
-  stroke-width: 4px;
+  stroke-width: 2px;
 }
-
 .node text {
   font: 11px sans-serif;
 }
-
 .link {
   fill: none;
   stroke: #ccc;
   stroke-width: 2px;
-  
 }
-
 </style>
-
 <body>
-
 <!-- load the d3.js library -->	
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script>
 
+
 // Set the dimensions and margins of the diagram
-var margin = {top: 10, right: 40, bottom: 20, left: 40},
+var margin = {top: 0, right: 40, bottom: 20, left: 0},
+
     width = 1300 - margin.left - margin.right,
+
     height = 1300 - margin.top - margin.bottom;
 
 var svg = d3.select("body").append("svg").attr("width", width + margin.right + margin.left)
 										 .attr("height", height + margin.top + margin.bottom).append("g")
 										 .attr("transform", "translate(" + 50 + ", " + 30  + ")");
 
-var i = 0, duration = 750, root;
-
+var i = 0, duration = 550, root;
 var treemap = d3.tree().size([height, width])
-d3.json("children2.json", function(error, treeData) {
+
+d3.json("tree.json", function(error, treeData) {
 	if (error) throw error;
 	root = d3.hierarchy(treeData, function(d) { return d.children; });
-	console.log(root)
-	root.x0 = height / 2;
+	root.x0 = 0; 
 	root.y0 = 0;
 
 	// Collapse after the second level
-	root.children.forEach(collapse);
+    root.children.forEach(collapse);
 	update(root);	
 	});
 
+
   function collapse(d) {
-    if(d.children) {
-      d._children = d.children
-      d._children.forEach(collapse)
-      d.children = null
+     if(d.children) {
+       d._children = d.children
+       d._children.forEach(collapse)
+       d.children = null
+	 }
    }
- }
-  
 
 function update(source) {
-
   // Assigns the x and y position for the nodes
   var treeData = treemap(root);
-
   // Compute the new tree layout.
   var nodes = treeData.descendants(),
-      links = treeData.descendants().slice(5);
-  
+      links = treeData.descendants().slice(1);
 
   // Normalize for fixed-depth.
-  nodes.forEach(function(d){ d.y = d.depth * 100});
+
+  nodes.forEach(function(d){ d.y = d.depth * 130});
+
 
   // ****************** Nodes section ***************************
 
@@ -84,7 +77,11 @@ function update(source) {
   var nodeEnter = node.enter().append('g')
       .attr('class', 'node')
       .attr("transform", function(d) {
-        return "translate(" + source.y0 + "," + source.x0 + ")";
+		if(d.data.name == "root") {
+			d.x = 2;
+			d.y = 0;
+        	return "translate(" + 0 + "," + 2 + ")";
+		}
     })
     .on('click', click);
 
@@ -93,119 +90,176 @@ function update(source) {
       .attr('class', 'node')
       .attr('r', 1e-5)
       .style("fill", function(d) {
-          return d._children ? "lightsteelblue" : "#fff";
-      });
+		  if(d.data.n_of_conversations > 1000) {
+		  	return "#f60c0c";
+		  }else if(d.data.n_of_conversations > 500) {
+		  	return "#34a507";
+		  }else if(d.data.n_of_conversations > 100) {
+		  	return "#f6e10c";
+		  }else {	
+         	return "lightsteelblue";
+		  }
+     });
+
 
   // Add labels for the nodes
   nodeEnter.append('text')
       .attr("dy", ".30em")
       .attr("x", function(d) {
-          return d.children || d._children ? -13 : 13;
+		if(d.data.root) {
+			return 40;
+		}
+		return 30;
       })
       .attr("text-anchor", function(d) {
-          return d.children || d._children ? "end" : "start";
+			return "start";
+     //       return d.children || d._children ? "end" : "start"; 
       })
       .text(function(d) {
-	      if(d.data.output != null){
-		     if(d.data.output.text != null) {
-				if(typeof d.data.output.text == "object" ) {
-                	return d.data.dialog_node + "   Text: " + d.data.output.text.values;
-				}
-                return d.data.dialog_node + "   Text: " + d.data.output.text;
-             }
-          }
-	      if(d.data.n_conversations != null) {
-			return d.data.dialog_node + "  Number of conversations: " + d.data.n_conversations.length;
-		  }
-		  return d.data.dialog_node;});
+		if(d.data.name) {
+			if(d.data.name.length > 15) {
+				return "[" + d.data.n_of_conversations + "] " + d.data.name.substring(1,13) + "...";
+			}else {
+				return "[" + d.data.n_of_conversations + "] " + d.data.name;
+
+			}
+		}});
+
+	nodeEnter.append('text')
+		.attr("dy", ".30em")
+		.attr("dx", "-.25em")
+		.text(function(d) {
+			return d.children || d._children ? "+" : "";
+		});
+
 
   // UPDATE
   var nodeUpdate = nodeEnter.merge(node);
-
   // Transition to the proper position for the node
   nodeUpdate.transition()
     .duration(duration)
-    .attr("transform", function(d) { 
-        return "translate(" + d.y + "," + d.x + ")";
+    .attr("transform", function(d) {
+		if(d.parent) {
+			return "translate(" + d.y + "," + (d.x) + ")";
+		}else {
+	        d.x = 2;
+			d.y = 0;
+        	return "translate(" + 0 + "," + 2 + ")";
+		}
      });
-
   // Update the node attributes and style
   nodeUpdate.select('circle.node')
     .attr('r', 10)
     .style("fill", function(d) {
-        return d._children ? "lightsteelblue" : "#fff";
-    })
-    .attr('cursor', 'pointer');
+		if(d.data.n_of_conversations > 1000) {
+		  	return "#f60c0c";
+		  }else if(d.data.n_of_conversations > 500) {
+		  	return "#34a507";
+		  }else if(d.data.n_of_conversations > 100) {
+		  	return "#f6e10c";
+		  }else {	
+          	return "lightsteelblue";
+		  }
+   })
+   .attr('cursor', 'pointer');
+
+//	nodeUpdate.select('text')
+//		.attr("dy", ".30em")
+//		.attr("dx", "-.25em")
+//		.text(function(d) {
+//			if(d.children) {
+//				console.log(d);
+//				if(d.depth < d.children[0].depth) {
+//					return "-";
+//				}
+//			}
+//			if(d._children) {
+//				if(d.depth < d._children[0].depth) {
+//					return "";
+//				}
+//			}
+//		})
 
 
   // Remove any exiting nodes
   var nodeExit = node.exit().transition()
       .duration(duration)
       .attr("transform", function(d) {
+		  if(source.name == "root") {
+ 			source.x = 2;
+		    source.y = 0;
+		  }
           return "translate(" + source.y + "," + source.x + ")";
       })
       .remove();
 
   // On exit reduce the node circles size to 0
-  nodeExit.select('circle')
-    .attr('r', 1e-6);
 
   // On exit reduce the opacity of text labels
   nodeExit.select('text')
     .style('fill-opacity', 1e-6);
 
   // ****************** links section ***************************
-
+	
   // Update the links...
   var link = svg.selectAll('path.link')
-      .data(links, function(d) { return d.id; });
-
+      .data(links, function(d) { 
+	  return d.id; 
+});
   // Enter any new links at the parent's previous position.
   var linkEnter = link.enter().insert('path', "g")
       .attr("class", "link")
       .attr('d', function(d){
-//		console.log("RE: ", d)
-		//if(d.parent.data.root != null) {
-		//	return diagonal(source.x0+
-		//}
+		if(d.parent.name == "root") {
+			d.parent.x = 2;
+			d.parent.y = 0;
+		}
         var o = {x: source.x0, y: source.y0}
         return diagonal(o, o)
       });
 
   // UPDATE
   var linkUpdate = linkEnter.merge(link);
-
   // Transition back to the parent element position
   linkUpdate.transition()
       .duration(duration)
-      .attr('d', function(d){ return diagonal(d, d.parent) });
+      .attr('d', function(d){ 
+		if(d.parent.name == "root") {
+			d.parent.x = 2;
+			d.parent.y = 0;
+		}
+		return diagonal(d, d.parent) 
+		});
 
   // Remove any exiting links
   var linkExit = link.exit().transition()
       .duration(duration)
       .attr('d', function(d) {
+		if(d.parent.name == "root") {
+			d.parent.x = 2;
+			d.parent.y = 0;
+		}
         var o = {x: source.x, y: source.y}
         return diagonal(o, o)
       })
       .remove();
-
   // Store the old positions for transition.
   nodes.forEach(function(d){
     d.x0 = d.x;
     d.y0 = d.y;
   });
 
+
+
   // Creates a curved (diagonal) path from parent to the child nodes
   function diagonal(s, d) {
-
     path = `M ${s.y} ${s.x}
             C ${(s.y + d.y) / 2} ${s.x},
               ${(s.y + d.y) / 2} ${d.x},
               ${d.y} ${d.x}`
-
+   
     return path
   }
-
   // Toggle children on click.
   function click(d) {
     if (d.children) {
@@ -215,8 +269,10 @@ function update(source) {
         d.children = d._children;
         d._children = null;
       }
+
     update(d);
   }
+
 }
 </script>
 </body>
