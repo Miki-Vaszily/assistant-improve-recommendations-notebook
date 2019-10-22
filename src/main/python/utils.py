@@ -68,37 +68,79 @@ def add_all_children_to_parents(workspace):
 	for i in workspace['dialog_nodes']:
 		graph = get_graph_children(workspace, i)
 		if len(graph) == 0:
-			nodes['children'].append({'dialog_node': i['dialog_node'], 'n._of_conversations': 0, 'children': []})
+			if 'title' in i:
+				nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'children': [], 'name': i['title']})
+			elif 'conditions' in i:
+				nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'children': [], 'name': i['conditions']})
+			else:
+				nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'children': [], 'name': 'response_condition'})
+
 			continue
 		
 		for j in graph:
 			idx = find_node(nodes['children'], i['dialog_node'])
 			if idx == -1:
 				if 'previous_sibling' in j:
-					nodes['children'].append({'dialog_node': i['dialog_node'], 'n._of_conversations': 0, 'children': [{'dialog_node': j['dialog_node'],'n._of_conversations':0,'output': j['output'], 'previous_sibling': j['previous_sibling']}]})
+					if 'title' in i and 'title' in j:
+						nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'name':i['title'] ,'children': [{'dialog_node': j['dialog_node'],'n_of_conversations':0,'output': j['output'], 'previous_sibling': j['previous_sibling'], 'name': j['title']}]})
+
+					elif 'title' in i:
+						nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'name':i['title'] ,'children': [{'dialog_node': j['dialog_node'],'n_of_conversations':0,'output': j['output'], 'previous_sibling': j['previous_sibling'], 'name': j['conditions']}]})
+
+					elif 'title' in j:
+						nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'name':i['conditions'] ,'children': [{'dialog_node': j['dialog_node'],'n_of_conversations':0,'output': j['output'], 'previous_sibling': j['previous_sibling'], 'name': j['title']}]})
+
+					elif 'conditions' in i and 'conditions' in j:
+						nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'name': i['conditions'], 'children': [{'dialog_node': j['dialog_node'],'n_of_conversations':0,'output': j['output'], 'previous_sibling': j['previous_sibling'], 'name': j['conditions']}]})
+
+					elif 'conditions' in i:
+						nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'name': i['conditions'], 'children': [{'dialog_node': j['dialog_node'],'n_of_conversations':0,'output': j['output'], 'previous_sibling': j['previous_sibling'], 'name': 'response_condition'}]})
+
+					elif 'conditions' in j:
+						nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'name': 'response_condition', 'children': [{'dialog_node': j['dialog_node'],'n_of_conversations':0,'output': j['output'], 'previous_sibling': j['previous_sibling'], 'name': j['conditions']}]})
+
+					else:						
+						nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'name': 'response_condition', 'children': [{'dialog_node': j['dialog_node'],'n_of_conversations':0,'output': j['output'], 'previous_sibling': j['previous_sibling'], 'name':'response_condition'}]})
+
+						
 				else:
-					nodes['children'].append({'dialog_node': i['dialog_node'], 'n._of_conversations': 0, 'children': [{'dialog_node': j['dialog_node'], 'n._of_conversations':0,'output': j['output']}]})
+					if 'title' in i and 'title' in j:
+						nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'name': i['title'],'children': [{'dialog_node': j['dialog_node'], 'n_of_conversations':0,'output': j['output'], 'name': j['title']}]})
+
+					elif 'title' in i:
+						nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'name': i['title'], 'children': [{'dialog_node': j['dialog_node'], 'n_of_conversations':0,'output': j['output'], 'name': j['conditions']}]})
+
+					elif 'title' in j:
+						nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'name': i['conditions'], 'children': [{'dialog_node': j['dialog_node'], 'n_of_conversations':0,'output': j['output'], 'name': j['title']}]})
+
+					elif 'conditions' in i and 'conditions' in j:
+						nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'name': i['conditions'], 'children': [{'dialog_node': j['dialog_node'], 'n_of_conversations':0,'output': j['output'], 'name': j['conditions']}]})
+
+					elif 'conditions' in i:
+						nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'name': i['conditions'], 'children': [{'dialog_node': j['dialog_node'], 'n_of_conversations':0,'output': j['output'], 'name': 'response_condition'}]})
+
+					elif 'conditions' in j:
+						nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'name': 'response_condition', 'children': [{'dialog_node': j['dialog_node'], 'n_of_conversations':0,'output': j['output'], 'name': j['conditions']}]})
+
+					else:
+						nodes['children'].append({'dialog_node': i['dialog_node'], 'n_of_conversations': 0, 'name': 'response_condition', 'children': [{'dialog_node': j['dialog_node'], 'n_of_conversations':0,'output': j['output'], 'name': 'response_condition'}]})
+
 			else:
 				if 'previous_sibling' in j:
-					nodes['children'][idx]['children'].append({'dialog_node': j['dialog_node'], 'n._of_conversations': 0,'output': j['output'], 'previous_sibling': j['previous_sibling']})
+					if 'title' in j:
+						nodes['children'][idx]['children'].append({'dialog_node': j['dialog_node'], 'n_of_conversations': 0,'output': j['output'], 'previous_sibling': j['previous_sibling'], 'name': j['title']})
+					elif 'conditions' in j:
+						nodes['children'][idx]['children'].append({'dialog_node': j['dialog_node'], 'n_of_conversations':0, 'output': j['output'], 'previous_sibling':j['previous_sibling'], 'name': j['conditions']})
+					else:
+						nodes['children'][idx]['children'].append({'dialog_node': j['dialog_node'], 'n_of_conversations':0, 'output': j['output'], 'previous_sibling':j['previous_sibling'], 'name': 'response_condition'})
+
 				else:
-					nodes['children'][idx]['children'].append({'dialog_node': j['dialog_node'], 'n._of_conversations': 0,'output': j['output']})
-			
-#	for node in nodes['children']:
-#		if len(node['children']) > 1:
-#		tmp = {}
-#			for j in node['children']:
-#				if 'previous_sibling' not in j:
-#					tmp['firs_child'] = j['dialog_node']
-#				else:
-#					tmp[j['previous_sibling']] = j['dialog_node']
-#			childs = [tmp['first']]
-#			node = tmp['first']
-#			del tmp['first']
-#			for i in tmp:
-#				childs.append(tmp[node])
-#				node = tmp[node]
-				
+					if 'title' in j:
+						nodes['children'][idx]['children'].append({'dialog_node': j['dialog_node'], 'n_of_conversations': 0,'output': j['output'], 'name':j['title']})
+					elif 'conditions' in j:
+						nodes['children'][idx]['children'].append({'dialog_node': j['dialog_node'], 'n_of_conversations': 0,'output': j['output'], 'name': j['conditions']})
+					else:
+						nodes['children'][idx]['children'].append({'dialog_node': j['dialog_node'], 'n_of_conversations': 0,'output': j['output'], 'name': 'response_condition'})
 
 	return nodes
 
@@ -114,15 +156,22 @@ def compute_number_of_conversations(tree, logs):
 				idx3 = find_node(tree['children'], node[j-1])
 				idx2 = find_node(tree['children'][idx3]['children'], node[j])
 				if idx2 > -1:
-					tree['children'][idx3]['n._of_conversations'] += 1
-					tree['children'][idx3]['children'][idx2]['n._of_conversations'] += 1
+					tree['children'][idx3]['n_of_conversations'] += 1
+					tree['children'][idx3]['children'][idx2]['n_of_conversations'] += 1
 				else:
 					idx3 = find_node(tree['children'], node[j])
-					tree['children'][idx3]['n._of_conversations'] += 1	
+					tree['children'][idx3]['n_of_conversations'] += 1	
 		else:
 			idx = find_node(tree['children'], node[0])
-			tree['children'][idx]['n._of_conversations'] += 1
-	return tree
+			tree['children'][idx]['n_of_conversations'] += 1
+
+	tree2 = {'root':'root', 'children':[], 'n_of_conversations': 0, 'name':'root'}
+	for i in tree['children']:
+		if i['n_of_conversations'] > 0:
+			tree2['n_of_conversations'] += i['n_of_conversations']
+			tree2['children'].append(i)
+		
+	return tree2
 
 
 def get_direct_output_children(workspace, node, skip_output=False):
