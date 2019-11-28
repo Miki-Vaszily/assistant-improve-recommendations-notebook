@@ -4,6 +4,7 @@ import os
 import traceback
 from typing import List, Dict, Tuple, Optional
 from node_path import NodePath
+import glob
 
 def load_raw_workspace(workspace_path):
     with open(workspace_path, "r") as fl:
@@ -74,32 +75,6 @@ def get_graph_children(workspace, parent):
 	return result
 
 
-def compute_number_of_conversations(workspace, logs):
-
-	data = workspace['dialog_nodes'].copy()
-	nodes = []
-	for i in data:
-		nodes.append(i['dialog_node'])
-		i['n_of_conversations'] = 0
-		i['n_of_end_conversations'] = 0
-	nodes = np.array(nodes)
-	total_conv = 0
-
-	for i in logs:
-		for visited in i['response']['output']['nodes_visited']:
-			a = np.where(nodes==visited)
-			total_conv += 1
-			if len(i['response']['output']['log_messages']) > 0 and i['response']['output']['log_messages'][0]['level'] == 'err':
-			#	print(data[a[0][0]]['n_of_end_conversations'])
-				data[a[0][0]]['n_of_end_conversations'] += 1	
-			#	print(data[a[0][0]]['n_of_end_conversations'])
-			else:
-				data[a[0][0]]['n_of_conversations'] += 1
-
-	return data, total_conv
-
-
-
 def get_direct_output_children(workspace, node, skip_output=False):
 
     if not skip_output and "output" in node:
@@ -167,7 +142,7 @@ def find_node(lst, node):
 
 	return tree
 """
-def set_data(workspace, node):
+"""def set_data(workspace, node):
 	
 	tmp = {}
 	for i in node:
@@ -202,7 +177,7 @@ def is_root_child(root, node):
 		if i['dialog_node'] == node['parent']:
 			return True
 	return False
-
+"""
 def helper_function(node):
 
 	tmp = {}
@@ -252,8 +227,14 @@ def clean_data(node):
 		res['type'] = node['type']
 		res['conditions'] = node['conditions']
 	else:
+		if node['type'] == "folder":
+			res['name'] = node['title']
+		elif node['type'] == "slot":
+			res['name'] = node['variable']
+		else:
+			res['name'] = node['type']
+
 		res['conditions'] = 'response_conditions'
-		res['name'] = node['type']
 		res['type'] = node['type']
 		
 	res['dialog_node'] = node['dialog_node']
@@ -296,3 +277,36 @@ def create_tree(workspace):
 
 	return tree
 
+def compute_number_of_conversations(workspace, logs):
+
+	data = workspace['dialog_nodes'].copy()
+	nodes = []
+	for i in data:
+		nodes.append(i['dialog_node'])
+		i['n_of_conversations'] = 0
+		i['n_of_end_conversations'] = 0
+	nodes = np.array(nodes)
+	total_conv = 0
+	
+	for i in logs:
+		lg = i['response']['output']['nodes_visited']	
+		for visited in lg :
+			a = np.where(nodes==visited)
+			if len(a[0]) == 0: continue
+			total_conv += 1
+			if len(i['response']['output']['log_messages']) > 0 and i['response']['output']['log_messages'][0]['level'] == 'err':
+				data[a[0][0]]['n_of_end_conversations'] += 1	
+			else:
+				data[a[0][0]]['n_of_conversations'] += 1
+
+	return total_conv
+
+def concatenate_logs(path):
+	logs_week = []
+	for filename in os.listdir(path):
+		with open(path+filename, 'r') as fl:
+			lg = json.load(fl)
+			for i in lg['logs']:
+				logs_week.append(i)
+
+	return logs_week
