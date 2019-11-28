@@ -39,7 +39,7 @@
 
 
 		var i = 0, duration = 550, root;
-		var treemap = d3.tree().size([height-500, width-100])
+		var treemap = d3.tree().size([height-500, width]) // 500, 100
 
 		d3.json("tree.json", function(error, treeData) {
 			if (error) throw error;
@@ -145,15 +145,27 @@
 					return "start";
 				}
       		})
+
       		.text(function(d) {
 			if(d.data.shape == 'circle') {
 				if(d.data.name) {
-					if(d.data.name.length > 15) {
-						return "[" + d.data.n_of_conversations + "] " + d.data.name.substring(0,13) + "...";
+					if(d.data.n_of_end_conversations > 0) {
+						if(d.data.name.length > 15) {
+							return "[" + d.data.n_of_end_conversations + "/" + d.data.n_of_conversations + "] " + d.data.name.substring(0,13) + "...";
+						}else {
+							return "[" + d.data.n_of_end_conversations + "/" + d.data.n_of_conversations + "] " + d.data.name;
+						}
+						
+
 					}else {
-						return "[" + d.data.n_of_conversations + "] " + d.data.name;
+						if(d.data.name.length > 15) {
+							return "[" + d.data.n_of_conversations + "] " + d.data.name.substring(0,13) + "...";
+						}else {
+							return "[" + d.data.n_of_conversations + "] " + d.data.name;
+						}
 					}
-		    	}
+			}
+			
 			}});
 
   		nodeEnter.append('text')
